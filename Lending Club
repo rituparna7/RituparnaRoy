@@ -1,0 +1,44 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import style
+style.use("ggplot")
+from sklearn import svm
+import ggplot as ggp
+from sklearn.model_selection import train_test_split
+Data_main=pd.read_csv(filepath_or_buffer='D:\loan_data.csv')
+np.sum(Data_main.isnull())
+ggp.ggplot(Data_main,ggp.aes(x='fico'))+ggp.geom_density(color='red')+ggp.geom_histogram(fill='blue')+ggp.facet_grid('not.fully.paid','credit.policy')
+Data_main.describe()
+y=Data_main['not.fully.paid']
+X=Data_main.drop('not.fully.paid',axis=1)
+y.shape,X.shape
+X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.3,random_state=123)
+X_train.shape,X_test.shape,y_test.shape,y_train.shape
+from sklearn import preprocessing
+X_scaledTest=preprocessing.scale(X_test[['int.rate','installment','log.annual.inc','dti','fico','days.with.cr.line','revol.bal','revol.util','inq.last.6mths','delinq.2yrs','pub.rec']])
+X_scaledTrain=preprocessing.scale(X_train[['int.rate','installment','log.annual.inc','dti','fico','days.with.cr.line','revol.bal','revol.util','inq.last.6mths','delinq.2yrs','pub.rec']])
+model=svm.SVC(kernel='linear',C=1,gamma=1)
+model.fit(X_scaledTrain,y_train)
+from sklearn.metrics import accuracy_score
+accuracy_score(y_test,model.predict(X_scaledTest))
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import classification_report
+parameters = [{'kernel': ['rbf'],
+               'gamma': [1e-4, 1e-3, 0.01, 0.1, 0.2, 0.5],
+                'C': [1, 10, 100, 1000]},
+              {'kernel': ['linear'], 'C': [1, 10, 100, 1000]}]
+model_T=svm.SVC(kernel='rbf',C=1,gamma=1)
+model_T.fit(X_scaledTrain,y_train)
+accuracy_score(y_test,model_T.predict(X_scaledTest))
+tune=GridSearchCV(cv=None, error_score='raise',
+       estimator=SVC(C=1.0, cache_size=200, class_weight=None, coef0=0.0,
+  decision_function_shape=None, degree=3, gamma='auto', kernel='rbf',
+  max_iter=-1, probability=False, random_state=None, shrinking=True,
+  tol=0.001, verbose=False),
+       fit_params={}, iid=True, n_jobs=-1,
+       param_grid=parameters
+       pre_dispatch='2*n_jobs', refit=True, scoring=None, verbose=0)
+tune.fit(X_scaledTrain,y_train)
+
+accuracy_score(y_test,tune.predict(X_scaledTest))
